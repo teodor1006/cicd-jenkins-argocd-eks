@@ -23,7 +23,15 @@ pipeline {
         stage('Cloning git') {
             steps {
                 script {
-                    checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/teodor1006/cicd-jenkins-argocd-eks.git']])
+                    checkout scm
+                }
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                script {
+                    sh 'pip3 install -r requirements.txt'
                 }
             }
         }
@@ -31,7 +39,6 @@ pipeline {
         stage('Running Unit Tests') {
             steps {
                 script {
-                    sh 'pip3 install -r requirements.txt'
                     sh 'python3 unittests.py'
                 }
             }
@@ -40,7 +47,7 @@ pipeline {
         stage('Building Image') {
             steps {
                 script {
-                    dockerImage = docker.build "${IMAGE_REPO_NAME}:${IMAGE_TAG}"
+                    dockerImage = docker.build("${IMAGE_REPO_NAME}:${IMAGE_TAG}")
                 }
             }
         }
@@ -48,10 +55,7 @@ pipeline {
         stage('Pushing to ECR') {
             steps {
                 script {
-                    // Tag the Docker image with the ECR repository URI
                     dockerImage.tag("${REPOSITORY_URI}:${IMAGE_TAG}")
-
-                    // Push the Docker image to ECR
                     docker.withRegistry("${REPOSITORY_URI}", 'ecr:latest') {
                         dockerImage.push("${IMAGE_TAG}")
                     }
@@ -60,6 +64,7 @@ pipeline {
         }
     }
 }
+
 
 
 

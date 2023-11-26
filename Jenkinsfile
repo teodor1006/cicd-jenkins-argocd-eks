@@ -31,7 +31,7 @@ pipeline {
         stage('Running Unit Tests') {
             steps {
                 script {
-                    // Assuming your unit tests are in a file named unittests.py
+                    sh 'pip3 install -r requirements.txt'
                     sh 'python3 unittests.py'
                 }
             }
@@ -60,6 +60,7 @@ pipeline {
         }
     }
 }
+
 
 
 

@@ -23,7 +23,7 @@ pipeline {
         stage('Cloning git') {
             steps {
                 script {
-                    checkout scm
+                    checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/teodor1006/cicd-jenkins-argocd-eks.git']])
                 }
             }
         }

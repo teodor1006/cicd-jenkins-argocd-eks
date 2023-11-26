@@ -2,11 +2,9 @@ pipeline {
     agent any
 
     environment {
-        AWS_ACCOUNT_ID = "865893227318"
-        AWS_REGION = "us-east-1"
-        IMAGE_REPO_NAME = "flask_image"
-        IMAGE_TAG = "latest"
-        REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_REPO_NAME}"
+        registryCredential = 'ecr:us-east-1:awscreds'
+        appRegistry = '865893227318.dkr.ecr.us-east-1.amazonaws.com/flask_image'
+        monitorRegistry = "https://865893227318.dkr.ecr.us-east-1.amazonaws.com"
     }
 
     stages {
@@ -19,27 +17,27 @@ pipeline {
                 }
             }
         }
-
-        stage('Build and Push Image to ECR') {
+        
+        stage('Build App Image') {
             steps {
                 script {
-                    // Retrieve AWS credentials from Jenkins credentials
-                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'awscreds', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-                        
-                        // Log in to AWS ECR using Docker CLI
-                        sh """
-                            aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
-                        """
-                        
-                        // Build and push Docker image to ECR
-                        dockerImage = docker.build("${REPOSITORY_URI}:${IMAGE_TAG}")
-                        docker.withRegistry("${REPOSITORY_URI}", 'ecr:latest') {
-                            dockerImage.push("${IMAGE_TAG}")
-                        }
-                    }
+                    dockerImage = docker.build( appRegistry + ":$BUILD_NUMBER", "./")
                 }
             }
         }
+
+        stage('Upload App Image') {
+            steps{
+                script{
+                    docker.withRegistry(vprofileRegistry, registryCredential) {
+                        dockerImage.push("$BUILD_NUMBER")
+                        dockerImage.push('latest')
+                        dockerImage.push('latest')
+                    }
+                }
+            }
+         }
+    
     }
 }
 

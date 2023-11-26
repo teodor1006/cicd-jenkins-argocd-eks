@@ -2,35 +2,17 @@ pipeline {
     agent any
 
     environment {
-        AWS_ACCOUNT_ID = "865893227318"
-        AWS_REGION = "us-east-1"
-        IMAGE_REPO_NAME = "flask_image"
-        IMAGE_TAG = "latest"
-        REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_REPO_NAME}"
+        AWS_REGION = 'us-east-1'
+        IMAGE_REPO_NAME = 'flask_image'
+        IMAGE_TAG = 'latest'
+        ECR_REGISTRY = "865893227318.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_REPO_NAME}"
     }
 
     stages {
-        stage('Logging into AWS ECR') {
+        stage('Checkout and Install Dependencies') {
             steps {
                 script {
-                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'awscreds', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
-                        sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-                    }
-                }
-            }
-        }
-
-        stage('Cloning git') {
-            steps {
-                script {
-                    checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/teodor1006/cicd-jenkins-argocd-eks.git']])
-                }
-            }
-        }
-
-        stage('Install Dependencies') {
-            steps {
-                script {
+                    checkout scm
                     sh 'pip3 install -r requirements.txt'
                 }
             }
@@ -44,19 +26,20 @@ pipeline {
             }
         }
 
-        stage('Building Image') {
+        stage('Build and Push Image to ECR') {
             steps {
                 script {
-                    dockerImage = docker.build("${IMAGE_REPO_NAME}:${IMAGE_TAG}")
-                }
-            }
-        }
+                    // Log in to ECR
+                    withCredentials([aws(credentialsId: 'awscreds', region: AWS_REGION)]) {
+                        sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}"
+                    }
 
-        stage('Pushing to ECR') {
-            steps {
-                script {
-                    dockerImage.tag("${REPOSITORY_URI}:${IMAGE_TAG}")
-                    docker.withRegistry("${REPOSITORY_URI}", 'ecr:latest') {
+                    // Build Docker image
+                    def dockerImage = docker.build("${IMAGE_REPO_NAME}:${IMAGE_TAG}")
+
+                    // Tag and push image to ECR
+                    dockerImage.tag("${ECR_REGISTRY}:${IMAGE_TAG}")
+                    docker.withRegistry(ECR_REGISTRY, 'ecr:latest') {
                         dockerImage.push("${IMAGE_TAG}")
                     }
                 }
@@ -64,6 +47,7 @@ pipeline {
         }
     }
 }
+
 
 
 

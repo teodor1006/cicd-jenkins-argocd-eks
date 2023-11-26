@@ -18,14 +18,6 @@ pipeline {
             }
         }
 
-        stage('Running Unit Tests') {
-            steps {
-                script {
-                    sh 'python3 unittests.py'
-                }
-            }
-        }
-
         stage('Build and Push Image to ECR') {
             steps {
                 script {

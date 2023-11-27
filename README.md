@@ -50,7 +50,7 @@ python3 app.py
 
 This will start the Flask server on **`localhost:5000`**. Navigate to [http://localhost:5000/](http://localhost:5000/) on your browser to access the application.
 
-![Flask](images/flask-local.png)
+![Flask](images/flask.png)
 
 ## **Part 2: Create a IAM User on AWS**
 

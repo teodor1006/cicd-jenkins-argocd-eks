@@ -5,8 +5,6 @@ pipeline {
         registryCredential = 'ecr:us-east-1:awscreds'
         appRegistry = '865893227318.dkr.ecr.us-east-1.amazonaws.com/flask_image'
         monitorRegistry = "https://865893227318.dkr.ecr.us-east-1.amazonaws.com"
-        GIT_REPO_NAME = "cicd-jenkins-argocd-eks"
-        GIT_USER_NAME = "teodor1006"
     }
 
     stages {
@@ -36,23 +34,6 @@ pipeline {
                     }
                 }
             }
-        }
-
-        stage('Updating the Deployment File') {
-            steps {
-                withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
-                    script {
-                        gitCredentials = "https://${GIT_USER_NAME}:${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}.git"
-                        sh """
-                            git clone ${gitCredentials}
-                            sed -i 's/replaceImageTag/${BUILD_NUMBER}/g' application.yaml
-                            git add application.yaml
-                            git commit -m "updated the image \${BUILD_NUMBER}"
-                            git push origin main
-                        """
-                    }
-                }
-            } 
         }
     }
 }

@@ -12,7 +12,6 @@ pipeline {
             steps {
                 checkout scm
                 script {
-                    // Install dependencies (you may need to adjust this based on your project structure)
                     sh 'pip3 install -r requirements.txt'
                 }
             }
